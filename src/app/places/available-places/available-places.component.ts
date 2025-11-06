@@ -50,4 +50,14 @@ export class AvailablePlacesComponent implements OnInit {
       sub.unsubscribe();
     });
   }
+
+
+onSelectPlace(selectPlace: Place){
+  this.htppClient.put('http://localhost:300/user-places', {
+    placeId: selectPlace.id
+  }).subscribe({
+    next:(resData) => console.log(resData),
+  });
+}
+
 }
