@@ -3,6 +3,7 @@ import { Place } from '../place.model';
 import { PlacesComponent } from '../places.component';
 import { PlacesContainerComponent } from '../places-container/places-container.component';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-available-places',
@@ -13,15 +14,21 @@ import { HttpClient } from '@angular/common/http';
 })
 export class AvailablePlacesComponent implements OnInit {
   places = signal<Place[] | undefined>(undefined);
+  isFetching = signal(false);
   private htppClient = inject(HttpClient);
   private destoryRef = inject(DestroyRef);
   ngOnInit() {
+    this.isFetching.set(true);
     const sub = this.htppClient
       .get<{ places: Place[] }>('http://localhost:3000/places')
+      .pipe(map((resData) => resData.places))
       .subscribe({
-        next: (resData) => {
-          console.log(resData.places);
+        next: (places) => {
+          this.places.set(places);
         },
+        complete: () =>{
+          this.isFetching.set(false);
+        }
       });
 
     this.destoryRef.onDestroy(() => {
