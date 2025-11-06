@@ -53,7 +53,7 @@ export class AvailablePlacesComponent implements OnInit {
 
 
 onSelectPlace(selectPlace: Place){
-  this.htppClient.put('http://localhost:300/user-places', {
+  this.htppClient.put('http://localhost:3000/user-places', {
     placeId: selectPlace.id
   }).subscribe({
     next:(resData) => console.log(resData),
