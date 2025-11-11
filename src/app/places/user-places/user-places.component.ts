@@ -5,6 +5,7 @@ import { PlacesComponent } from '../places.component';
 import { HttpClient } from '@angular/common/http';
 import { Place } from '../place.model';
 import { catchError, map, throwError } from 'rxjs';
+import { PlacesService } from '../places.service';
 
 @Component({
   selector: 'app-user-places',
@@ -13,40 +14,26 @@ import { catchError, map, throwError } from 'rxjs';
   styleUrl: './user-places.component.css',
   imports: [PlacesContainerComponent, PlacesComponent],
 })
-export class UserPlacesComponent implements OnInit{
-   places = signal<Place[] | undefined>(undefined);
-    isFetching = signal(false);
-    error = signal('');
-    private htppClient = inject(HttpClient);
-    private destoryRef = inject(DestroyRef);
+export class UserPlacesComponent implements OnInit {
+  places = signal<Place[] | undefined>(undefined);
+  isFetching = signal(false);
+  error = signal('');
+  private placesService = inject(PlacesService);
+  private destoryRef = inject(DestroyRef);
 
   ngOnInit() {
     this.isFetching.set(true);
-    const sub = this.htppClient
-      .get<{ places: Place[] }>('http://localhost:3000/user-places')
-      .pipe(
-        map((resData) => resData.places),
-        catchError((error) => {
-          console.log(error);
-          return throwError(
-            () =>
-              new Error(
-                'Something went wrong fetching your favorite  place. Please try again later.'
-              )
-          );
-        })
-      )
-      .subscribe({
-        next: (places) => {
-          this.places.set(places);
-        },
-        error: (error: Error) => {
-          this.error.set(error.message);
-        },
-        complete: () => {
-          this.isFetching.set(false);
-        },
-      });
+    const sub = this.placesService.loadUserPlaces().subscribe({
+      next: (places) => {
+        this.places.set(places);
+      },
+      error: (error: Error) => {
+        this.error.set(error.message);
+      },
+      complete: () => {
+        this.isFetching.set(false);
+      },
+    });
 
     this.destoryRef.onDestroy(() => {
       sub.unsubscribe();

@@ -4,6 +4,7 @@ import { PlacesComponent } from '../places.component';
 import { PlacesContainerComponent } from '../places-container/places-container.component';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, throwError } from 'rxjs';
+import { PlacesService } from '../places.service';
 
 @Component({
   selector: 'app-available-places',
@@ -16,48 +17,34 @@ export class AvailablePlacesComponent implements OnInit {
   places = signal<Place[] | undefined>(undefined);
   isFetching = signal(false);
   error = signal('');
-  private htppClient = inject(HttpClient);
+  private placesService = inject(PlacesService);
   private destoryRef = inject(DestroyRef);
   ngOnInit() {
     this.isFetching.set(true);
-    const sub = this.htppClient
-      .get<{ places: Place[] }>('http://localhost:3000/places')
-      .pipe(
-        map((resData) => resData.places),
-        catchError((error) => {
-          console.log(error);
-          return throwError(
-            () =>
-              new Error(
-                'Something went wrong fetching the available place. Please try again later.'
-              )
-          );
-        })
-      )
-      .subscribe({
-        next: (places) => {
-          this.places.set(places);
-        },
-        error: (error: Error) => {
-          this.error.set(error.message);
-        },
-        complete: () => {
-          this.isFetching.set(false);
-        },
-      });
+    const sub = this.placesService.loadAvailablePlaces().subscribe({
+      next: (places) => {
+        this.places.set(places);
+      },
+      error: (error: Error) => {
+        this.error.set(error.message);
+      },
+      complete: () => {
+        this.isFetching.set(false);
+      },
+    });
 
     this.destoryRef.onDestroy(() => {
       sub.unsubscribe();
     });
   }
 
+  onSelectPlace(selectPlace: Place) {
+    const sub = this.placesService.addPlaceToUserPlaces(selectPlace.id).subscribe({
+      next: (resData) => console.log(resData),
+    });
 
-onSelectPlace(selectPlace: Place){
-  this.htppClient.put('http://localhost:3000/user-places', {
-    placeId: selectPlace.id
-  }).subscribe({
-    next:(resData) => console.log(resData),
-  });
-}
-
+    this.destoryRef.onDestroy(() => {
+      sub.unsubscribe();
+    });
+  }
 }
