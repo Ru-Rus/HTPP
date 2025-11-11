@@ -45,13 +45,32 @@ export class PlacesService {
       .pipe(
         catchError((error) => {
           this.userPlaces.set(prevPlaces);
-          this.errorService.showError('Failed to Store Selected Place')
+          this.errorService.showError('Failed to Store Selected Place');
           return throwError(() => new Error('Failed to Store Selected Place'));
         })
       );
   }
 
-  removeUserPlace(place: Place) {}
+  removeUserPlace(place: Place) {
+    const prevPlaces = this.userPlaces();
+
+    if (prevPlaces.some((p) => p.id === place.id)) {
+      this.userPlaces.set(prevPlaces.filter((p) => p.id !== place.id));
+      console.log(place.id);
+    }
+
+    return this.htppClient
+      .delete('http://localhost:3000/user-places/' + place.id)
+      .pipe(
+        catchError((error) => {
+          this.userPlaces.set(prevPlaces);
+          this.errorService.showError('Failed to remove the Selected Place');
+          return throwError(
+            () => new Error('Failed to remove the Selected Place')
+          );
+        })
+      );
+  }
 
   private fetchPlace(url: string, errorMessage: string) {
     return this.htppClient.get<{ places: Place[] }>(url).pipe(
